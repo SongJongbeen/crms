@@ -1,2 +1,3 @@
 PyQt6 == 6.10.2
 qt_material
+pyinstaller
