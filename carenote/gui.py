@@ -4,7 +4,11 @@ from PyQt6.QtWidgets import (
     QListWidget, QFormLayout, QSpinBox, QTableWidget, QTableWidgetItem,
     QSplitter, QDateEdit
 )
-from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtPrintSupport import (
+    QPrintPreviewDialog, QPrinter, QPrintDialog
+)
+from PyQt6.QtGui import QTextDocument, QFont, QPageSize, QPageLayout
+from PyQt6.QtCore import Qt, QDate, QMarginsF
 import sys
 
 from carenote.crud import StudentCRUD, ConsultingCRUD
@@ -469,6 +473,23 @@ class ConsultingListTab(QWidget):
 
         main_layout.addWidget(splitter)
 
+        # ---- 프린트 버튼 영역 ----
+        print_layout = QHBoxLayout()
+
+        self.print_preview_btn = QPushButton("프린트 미리보기")
+        self.print_direct_btn = QPushButton("직접 인쇄")
+        self.print_pdf_btn = QPushButton("PDF 저장")
+
+        self.print_preview_btn.clicked.connect(self.show_print_preview)
+        self.print_direct_btn.clicked.connect(self.show_print_dialog)
+        self.print_pdf_btn.clicked.connect(self.export_pdf)
+
+        print_layout.addWidget(self.print_preview_btn)
+        print_layout.addWidget(self.print_direct_btn)
+        print_layout.addWidget(self.print_pdf_btn)
+
+        main_layout.addLayout(print_layout)
+
         self.setLayout(main_layout)
 
         # 처음 로딩 시 전체 보기
@@ -577,6 +598,134 @@ class ConsultingListTab(QWidget):
             consulting.consulting_note or ""
         )
 
+    # ---- 프린트 관련 ---- 
+    def get_current_consulting_content(self):
+        """현재 선택된 상담의 전체 내용을 프린트용 HTML로 반환"""
+        if not self.table.selectedItems():
+            return None
+            
+        row = self.table.selectedItems()[0].row()
+        consulting_id = int(self.table.item(row, 0).text())
+        consulting = ConsultingCRUD.get(consulting_id)
+        
+        if not consulting:
+            return None
+            
+        student = StudentCRUD.get(consulting.student_id)
+        student_name = student.student_name if student else "알 수 없음"
+        
+        # 상담 기록을 HTML 형식으로 포맷팅
+        html = f"""
+        <html>
+        <head>
+            <style>
+                body {{ 
+                    font-family: 'Malgun Gothic', sans-serif; 
+                    margin: 40px; 
+                    line-height: 1.6;
+                }}
+                h1 {{ color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }}
+                h2 {{ color: #34495e; }}
+                .student-info {{ background: #ecf0f1; padding: 15px; border-radius: 8px; margin: 20px 0; }}
+                .content {{ white-space: pre-wrap; }}
+                .date {{ color: #7f8c8d; font-size: 0.9em; }}
+            </style>
+        </head>
+        <body>
+            <h1>개인상담 기록</h1>
+            
+            <div class="student-info">
+                <strong>학생:</strong> {student_name}<br>
+                <strong>상담일:</strong> {consulting.consulting_date or '미기입'}<br>
+                <strong>상담유형:</strong> {consulting.consulting_type or '-'}<br>
+                <strong>상담대상:</strong> {consulting.consulting_object or '-'}
+            </div>
+            
+            <h2>상담 주제</h2>
+            <p>{consulting.consulting_title or '-'}</p>
+            
+            <h2>내담자가 진술한 문제와 상황</h2>
+            <div class="content">{consulting.consulting_content or '-'}</div>
+            
+            <h2>상담자 소견 및 개입</h2>
+            <div class="content">{consulting.consulting_opinion or '-'}</div>
+            
+            <h2>기타 특이사항</h2>
+            <div class="content">{consulting.consulting_note or '-'}</div>
+            
+            <hr style="margin-top: 40px;">
+            <p style="text-align: right; font-size: 0.8em; color: #7f8c8d;">
+                CareNote 시스템에서 인쇄됨 - {consulting.consulting_date}
+            </p>
+        </body>
+        </html>
+        """
+        return html
+    
+    def show_print_preview(self):
+        """프린트 미리보기 다이얼로그"""
+        content = self.get_current_consulting_content()
+        if not content:
+            QMessageBox.warning(self, "경고", "프린트할 상담 기록을 먼저 선택하세요.")
+            return
+        
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        preview_dialog = QPrintPreviewDialog(printer, self)
+        preview_dialog.paintRequested.connect(lambda p: self.print_document(p, content))
+        preview_dialog.exec()
+    
+    def show_print_dialog(self):
+        """직접 인쇄 다이얼로그"""
+        content = self.get_current_consulting_content()
+        if not content:
+            QMessageBox.warning(self, "경고", "프린트할 상담 기록을 먼저 선택하세요.")
+            return
+        
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        print_dialog = QPrintDialog(printer, self)
+        if print_dialog.exec() == QPrintDialog.DialogCode.Accepted:
+            self.print_document(printer, content)
+    
+    def export_pdf(self):
+        """PDF로 저장"""
+        content = self.get_current_consulting_content()
+        if not content:
+            QMessageBox.warning(self, "경고", "PDF로 저장할 상담 기록을 먼저 선택하세요.")
+            return
+        
+        from PyQt6.QtWidgets import QFileDialog
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, 
+            "PDF 저장", 
+            f"상담기록_{self.detail_date_label.text() or '미기입'}.pdf",
+            "PDF 파일 (*.pdf)"
+        )
+        
+        if not file_path:
+            return
+        
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+        printer.setOutputFileName(file_path)
+        printer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
+        printer.setPageMargins(QMarginsF(20, 20, 20, 20), QPageLayout.Unit.Millimeter)
+        
+        self.print_document(printer, content)
+        QMessageBox.information(self, "완료", f"PDF가 저장되었습니다:\n{file_path}")
+    
+    def print_document(self, printer, html_content):
+        """실제 프린트/미리보기/PDF 생성 공통 로직"""
+        document = QTextDocument()
+        document.setHtml(html_content)
+        
+        # 폰트 설정 (한글 지원)
+        font = QFont("Malgun Gothic", 10)
+        document.setDefaultFont(font)
+        
+        # 페이지 레이아웃 설정
+        document.print(printer)
+
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -590,7 +739,6 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(tabs)
         self.resize(1000, 650)
-
 
 def apply_basic_style(app: QApplication):
     # 아주 간단한 다크 스타일

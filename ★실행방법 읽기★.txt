@@ -1,0 +1,4 @@
+dist -> CareNote.exe 실행
+
+데이터 이동은
+data -> carenote.db 이 파일만 옮겨서 덮어쓰기
