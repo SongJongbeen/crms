@@ -266,6 +266,13 @@ class ConsultingTab(QWidget):
         # ----- 상담 입력 폼 -----
         form_layout = QFormLayout()
 
+        # 상담 날짜 입력 (수동)
+        self.date_edit = QDateEdit()
+        self.date_edit.setCalendarPopup(True)
+        self.date_edit.setDisplayFormat("yyyy-MM-dd")
+        self.date_edit.setDate(QDate.currentDate())  # 기본값: 오늘
+        form_layout.addRow("상담 날짜*", self.date_edit)
+
         self.title_input = QLineEdit()
         form_layout.addRow("상담 주제*", self.title_input)
 
@@ -355,9 +362,13 @@ class ConsultingTab(QWidget):
         if not self.validate_form():
             return  # 검증 실패 → NEXT(저장) 차단
 
+        # 선택한 날짜를 문자열로 변환 (시간 포함)
+        selected_date = self.date_edit.date().toString("yyyy-MM-dd") + " 00:00:00"
+
         consulting = Consulting(
             consulting_title=self.title_input.text().strip(),
             student_id=self.selected_student_id,
+            consulting_date=selected_date,
             consulting_type=self.get_selected_type(),
             consulting_object=self.get_selected_object(),
             consulting_content=self.content_edit.toPlainText().strip() or None,
@@ -368,6 +379,7 @@ class ConsultingTab(QWidget):
         QMessageBox.information(self, "완료", f"상담 기록이 추가되었습니다. (ID: {cid})")
 
         # 폼 초기화
+        self.date_edit.setDate(QDate.currentDate())  # 날짜도 오늘로 초기화
         self.title_input.clear()
         self.type_combo.setCurrentIndex(0)
         self.object_combo.setCurrentIndex(0)
