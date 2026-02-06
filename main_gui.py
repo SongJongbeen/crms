@@ -10,9 +10,9 @@ if __name__ == "__main__":
     init_database()
 
     app = QApplication(sys.argv)
-    # apply_basic_style(app)
+    apply_basic_style(app)
 
-    apply_stylesheet(app, theme='dark_teal.xml')
+    # apply_stylesheet(app, theme='dark_teal.xml')
 
     window = MainWindow()
     window.show()

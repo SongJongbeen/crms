@@ -741,35 +741,130 @@ class MainWindow(QMainWindow):
         self.resize(1000, 650)
 
 def apply_basic_style(app: QApplication):
-    # 아주 간단한 다크 스타일
+    """라이트 모드 스타일 적용"""
     app.setStyleSheet("""
         QMainWindow {
-            background-color: #222;
+            background-color: #ffffff;
         }
+        
         QWidget {
-            font-family: 'Malgun Gothic';
-            font-size: 11pt;
-            color: #f0f0f0;
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            font-size: 10pt;
+            color: #2c3e50;
+            background-color: #f8f9fa;
         }
-        QLineEdit, QTextEdit, QListWidget, QComboBox {
-            background-color: #333;
-            border: 1px solid #555;
-            padding: 4px;
+        
+        QLineEdit, QTextEdit, QComboBox {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 6px;
+            color: #212529;
         }
+        
+        QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
+            border: 1px solid #3498db;
+        }
+        
+        QListWidget, QTableWidget {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            color: #212529;
+            alternate-background-color: #f8f9fa;
+        }
+        
         QPushButton {
-            background-color: #3a7bd5;
+            background-color: #3498db;
             border: none;
-            padding: 6px 10px;
+            padding: 8px 16px;
             color: white;
             border-radius: 4px;
+            font-weight: bold;
         }
+        
         QPushButton:hover {
-            background-color: #356ac3;
+            background-color: #2980b9;
         }
+        
         QPushButton:pressed {
-            background-color: #2b579a;
+            background-color: #1f618d;
         }
+        
+        QPushButton:disabled {
+            background-color: #bdc3c7;
+        }
+        
+        QTabWidget::pane {
+            border: 1px solid #dee2e6;
+            background-color: white;
+        }
+        
         QTabBar::tab {
-            padding: 8px 16px;
+            padding: 10px 20px;
+            background-color: #e9ecef;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            border-bottom: none;
+            margin-right: 2px;
+        }
+        
+        QTabBar::tab:selected {
+            background-color: white;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        
+        QTabBar::tab:hover {
+            background-color: #f1f3f5;
+        }
+        
+        QLabel {
+            color: #495057;
+            background-color: transparent;
+        }
+        
+        QTableWidget {
+            gridline-color: #dee2e6;
+        }
+        
+        QTableWidget::item {
+            padding: 5px;
+        }
+        
+        QTableWidget::item:selected {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        QHeaderView::section {
+            background-color: #f1f3f5;
+            color: #495057;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            font-weight: bold;
+        }
+        
+        QSplitter::handle {
+            background-color: #dee2e6;
+        }
+        
+        QDateEdit {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 6px;
+            color: #212529;
+        }
+        
+        QComboBox::drop-down {
+            border: none;
+            width: 20px;
+        }
+        
+        QComboBox::down-arrow {
+            image: none;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid #495057;
         }
     """)
